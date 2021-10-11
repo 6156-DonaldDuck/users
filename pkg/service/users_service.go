@@ -27,3 +27,38 @@ func GetUserById(userId uint) (model.User, error) {
 	}
 	return user, result.Error
 }
+
+func DeleteUserById(userId uint) (error) {
+	user := model.User{}
+	result := db.DbConn.Delete(&user, userId)
+	if result.Error != nil {
+		log.Errorf("[service.DeleteUserById] error occurred while deleting user with id %v, err=%v\n", userId, result.Error)
+	} else {
+		log.Infof("[service.DeleteUserById] successfully deleted user with id %v, rows affected = %v\n", userId, result.RowsAffected)
+	}
+	return result.Error
+}
+
+func CreateUser(user model.User) (uint, error) {
+	result := db.DbConn.Create(&user)
+	if result.Error != nil {
+		log.Errorf("[service.CreateUser] error occurred while creating user, err=%v\n", result.Error)
+	} else {
+		log.Infof("[service.CreateUser] successfully created user with id %v, rows affected = %v\n", user.ID, result.RowsAffected)
+	}
+	return user.ID, result.Error
+}
+
+func UpdateUser(updateInfo model.User) (error){
+	result := db.DbConn.Model(&updateInfo).Updates(updateInfo)
+	if result.Error != nil {
+		log.Errorf("[service.UpdateUser] error occurred while updating user, err=%v\n", result.Error)
+	} else {
+		log.Infof("[service.UpdateUser] successfully updated user with id %v, rows affected = %v\n", updateInfo.ID, result.RowsAffected)
+	}
+	return result.Error
+}
+
+
+
+

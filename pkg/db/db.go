@@ -32,7 +32,7 @@ func init() {
 func createTables() {
 	if !DbConn.Migrator().HasTable("users") {
 		log.Infof("[db.createTables] table users not found, creating new one\n")
-		if err := DbConn.Migrator().CreateTable(&model.Comment{}); err != nil {
+		if err := DbConn.Migrator().CreateTable(&model.User{}); err != nil {
 			log.Errorf("[db.createTables] error occurred while creating table users, err=%v\n", err)
 		}
 
@@ -45,7 +45,7 @@ func createTables() {
 			FirstName: "Tester",
 			LastName: "A",
 			PhoneNumber: "123-444-4321",
-			Email: "a@b.com"
+			Email: "a@b.com",
 		}
 		result := DbConn.Create(&testUser)
 		if result.Error != nil {
