@@ -26,18 +26,20 @@ func init() {
 		log.Errorf("[db.init] error occurred while creating database connection, err=%v\n", err)
 	}
 
-	createTables()
+	createUserTable()
+	createAddressTable()
 }
 
-func createTables() {
-	if !DbConn.Migrator().HasTable("users") {
-		log.Infof("[db.createTables] table users not found, creating new one\n")
+func createUserTable() {
+	tableName := "users"
+	if !DbConn.Migrator().HasTable(tableName) {
+		log.Infof("[db.createTables] table %v not found, creating new one\n", tableName)
 		if err := DbConn.Migrator().CreateTable(&model.User{}); err != nil {
-			log.Errorf("[db.createTables] error occurred while creating table users, err=%v\n", err)
+			log.Errorf("[db.createTables] error occurred while creating table %v, err=%v\n", tableName, err)
 		}
 
 		// insert test data
-		testUser := model.User{
+		testData := model.User{
 			Model: gorm.Model{
 				ID: 1,
 				CreatedAt: time.Now(),
@@ -47,7 +49,38 @@ func createTables() {
 			PhoneNumber: "123-444-4321",
 			Email: "a@b.com",
 		}
-		result := DbConn.Create(&testUser)
+		result := DbConn.Create(&testData)
+		if result.Error != nil {
+			log.Errorf("[db.createTables] error occurred while inserting test data, err=%v\n", result.Error)
+		} else {
+			log.Infof("[db.createTables] successfully inserted test data, rows affected=%v\n", result.RowsAffected)
+		}
+	}
+}
+
+func createAddressTable() {
+	tableName := "addresses"
+	if !DbConn.Migrator().HasTable(tableName) {
+		log.Infof("[db.createTables] table %v not found, creating new one\n", tableName)
+		if err := DbConn.Migrator().CreateTable(&model.Address{}); err != nil {
+			log.Errorf("[db.createTables] error occurred while creating table %v, err=%v\n", tableName, err)
+		}
+
+		// insert test data
+		testData := model.Address{
+			Model: gorm.Model{
+				ID: 1,
+				CreatedAt: time.Now(),
+			},
+			StreetNumber: "W 116 St",
+			StreetName1: "A",
+			StreetName2: "B",
+			City: "New York",
+			Region: "NY",
+			CountryCode: "1",
+			PostalCode: "10031",
+		}
+		result := DbConn.Create(&testData)
 		if result.Error != nil {
 			log.Errorf("[db.createTables] error occurred while inserting test data, err=%v\n", result.Error)
 		} else {

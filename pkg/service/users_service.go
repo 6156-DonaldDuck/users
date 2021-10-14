@@ -4,6 +4,7 @@ import (
 	"github.com/6156-DonaldDuck/users/pkg/db"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	log "github.com/sirupsen/logrus"
+	"errors"
 )
 
 func ListUsers() ([]model.User, error) {
@@ -59,6 +60,73 @@ func UpdateUser(updateInfo model.User) (error){
 	return result.Error
 }
 
+func ListAddresses() ([]model.Address, error) {
+	var addresses []model.Address
+	result := db.DbConn.Find(&addresses)
+	if result.Error != nil {
+		log.Errorf("[service.ListAddresses] error occurred while listing address, err=%v\n", result.Error)
+	} else {
+		log.Infof("[service.ListAddresses] successfully listed address, rows affected = %v\n", result.RowsAffected)
+	}
+	return addresses, result.Error
+}
 
+func GetAddressById(addressId uint) (model.Address, error) {
+	address := model.Address{}
+	result := db.DbConn.First(&address, addressId)
+	if result.Error != nil {
+		log.Errorf("[service.GetAddressById] error occurred while getting address with id %v, err=%v\n", addressId, result.Error)
+	} else {
+		log.Infof("[service.GetAddressById] successfully got address with id %v, rows affected = %v\n", addressId, result.RowsAffected)
+	}
+	return address, result.Error
+}
 
+func CreateAddress(address model.Address) (uint, error) {
+	result := db.DbConn.Create(&address)
+	if result.Error != nil {
+		log.Errorf("[service.CreateAddress] error occurred while creating address, err=%v\n", result.Error)
+	} else {
+		log.Infof("[service.CreateAddress] successfully created address with id %v, rows affected = %v\n", address.ID, result.RowsAffected)
+	}
+	return address.ID, result.Error
+}
 
+func UpdateAddressById(updateInfo model.Address) (error){
+	result := db.DbConn.Model(&updateInfo).Updates(updateInfo)
+	if result.Error != nil {
+		log.Errorf("[service.UpdateAddress] error occurred while updating address, err=%v\n", result.Error)
+	} else {
+		log.Infof("[service.UpdateAddress] successfully updated address with id %v, rows affected = %v\n", updateInfo.ID, result.RowsAffected)
+	}
+	return result.Error
+}
+
+func DeleteAddressById(addressId uint) (error) {
+	address := model.Address{}
+	result := db.DbConn.Delete(&address, addressId)
+	if result.Error != nil {
+		log.Errorf("[service.DeleteAddressById] error occurred while deleting address with id %v, err=%v\n", addressId, result.Error)
+	} else {
+		log.Infof("[service.DeleteAddressById] successfully deleted address with id %v, rows affected = %v\n", addressId, result.RowsAffected)
+	}
+	return result.Error
+}
+
+func GetAddressByUserId(userId uint) (model.Address, error) {
+	address := model.Address{}
+	user, err := GetUserById(userId)
+	if err != nil {
+		log.Errorf("[service.GetAddressByUserId] error occurred while getting user with id %v, err=%v\n", userId, err)
+		return address, err
+	}
+	if user.AddressID == 0 {
+		return address, errors.New("[service.GetAddressByUserId] user don't have address")
+	}
+	address, err = GetAddressById(user.AddressID)
+	if err != nil {
+		log.Errorf("[service.GetAddressByUserId] error occurred while getting address with id %v, err=%v\n", user.AddressID, err)
+		return address, err
+	}
+	return address, err
+}
