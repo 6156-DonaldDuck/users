@@ -5,6 +5,7 @@ import (
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	"github.com/6156-DonaldDuck/users/pkg/service"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 func InitRouter() {
 	r := gin.Default()
+	r.Use(cors.Default()) // default allows all origin
 	// users
 	r.GET( "/api/v1/users", ListUsers)
 	r.GET( "/api/v1/users/:userId", GetUserById)
