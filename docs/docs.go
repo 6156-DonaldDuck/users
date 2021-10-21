@@ -335,7 +335,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Users"
                 ],
                 "summary": "Delete User By User Id",
                 "parameters": [

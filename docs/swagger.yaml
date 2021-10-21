@@ -185,7 +185,7 @@ paths:
             type: invalid
       summary: Delete User By User Id
       tags:
-      - User
+      - Users
     post:
       consumes:
       - application/json

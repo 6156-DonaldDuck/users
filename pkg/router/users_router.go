@@ -91,7 +91,7 @@ func GetUserById(c *gin.Context) {
 // @Summary Delete User By User Id
 // @Schemes
 // @Description Delete user by user id
-// @Tags User
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param ID query int true "the id of a specfic user"
