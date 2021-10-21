@@ -9,12 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	docs "github.com/6156-DonaldDuck/users/docs"
 )
 
 
 func InitRouter() {
 	r := gin.Default()
 	r.Use(cors.Default()) // default allows all origin
+	docs.SwaggerInfo.BasePath = config.Configuration.Mysql.Host
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// users
 	r.GET( "/api/v1/users", ListUsers)
 	r.GET( "/api/v1/users/:userId", GetUserById)
@@ -36,6 +42,17 @@ func InitRouter() {
 	r.Run(":" + config.Configuration.Port)
 }
 
+// @BasePath /api/v1
+
+// @Summary List All Users
+// @Schemes
+// @Description List all users
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {json} users
+// @Failure 500 internal server error
+// @Router /users [get]
 func ListUsers(c *gin.Context) {
 	users, err := service.ListUsers()
 	if err != nil {
@@ -45,6 +62,16 @@ func ListUsers(c *gin.Context) {
 	}
 }
 
+// @Summary Get User By User Id
+// @Schemes
+// @Description Get user by user id
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param ID path int true "the id of a specfic user"
+// @Success 200 {json} user
+// @Failure 400 invalid user id
+// @Router /users/{userId} [get]
 func GetUserById(c *gin.Context) {
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
@@ -61,6 +88,16 @@ func GetUserById(c *gin.Context) {
 	}
 }
 
+// @Summary Delete User By User Id
+// @Schemes
+// @Description Delete user by user id
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param ID query int true "the id of a specfic user"
+// @Success 200 {json} delete successfully
+// @Failure 400 invalid user id
+// @Router /users/ [delete]
 func DeleteUserById(c *gin.Context){
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
@@ -77,6 +114,20 @@ func DeleteUserById(c *gin.Context){
 	}
 }
 
+// @Summary Create User
+// @Schemes
+// @Description Create User
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param first_name query string false "First Name"
+// @Param last_name query string false "Last Name"
+// @Param phone_number query string false "Phone Number"
+// @Param email query string false "Email"
+// @Param address_id query int false "Address ID"
+// @Success 200 {json} user id
+// @Failure 400 invalid user id
+// @Router /users/ [post]
 func CreateUser(c *gin.Context){
 	user := model.User{}
 	if err := c.ShouldBind(&user); err != nil{
@@ -90,6 +141,16 @@ func CreateUser(c *gin.Context){
 	}
 }
 
+// @Summary Update User By User Id
+// @Schemes
+// @Description Update user by user id
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param ID path int true "the id of a specfic user"
+// @Success 200 {json} update successfully
+// @Failure 400 invalid user id
+// @Router /users/{userId} [put]
 func UpdateUserById(c *gin.Context){
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
@@ -111,6 +172,17 @@ func UpdateUserById(c *gin.Context){
 	}
 }
 
+// @BasePath /api/v1
+
+// @Summary List All Addresses
+// @Schemes
+// @Description List all addresses
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Success 200 {json} addresses
+// @Failure 500 internal server error
+// @Router /addresses [get]
 func ListAddresses(c *gin.Context) {
 	users, err := service.ListAddresses()
 	if err != nil {
@@ -120,6 +192,16 @@ func ListAddresses(c *gin.Context) {
 	}
 }
 
+// @Summary Get Address By Address Id
+// @Schemes
+// @Description Get addresses by addresses id
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Param ID path int true "the id of a specfic addresses"
+// @Success 200 {json} addresses
+// @Failure 400 invalid addresses id
+// @Router /addresses/{addresseId} [get]
 func GetAddressById(c *gin.Context) {
 	idStr := c.Param("addressId")
 	addressId, err := strconv.Atoi(idStr)
@@ -136,6 +218,22 @@ func GetAddressById(c *gin.Context) {
 	}
 }
 
+// @Summary Create Address
+// @Schemes
+// @Description Create Address
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Param street_number query string false "Street Number"
+// @Param street_name_1 query string false "Street Name Line 1"
+// @Param street_name_2 query string false "Street Name Line 2"
+// @Param city query string false "City"
+// @Param region query string false "Region"
+// @Param country_code query string false "Country Code"
+// @Param postal_code query string false "Postal Code"
+// @Success 200 {json} address id
+// @Failure 400 invalid address id
+// @Router /addresses/ [post]
 func CreateAddress(c *gin.Context){
 	address := model.Address{}
 	if err := c.ShouldBind(&address); err != nil{
@@ -149,6 +247,16 @@ func CreateAddress(c *gin.Context){
 	}
 }
 
+// @Summary Update Address By Address Id
+// @Schemes
+// @Description Update address by address id
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Param ID path int true "the id of a specfic address"
+// @Success 200 {json} update successfully
+// @Failure 400 invalid address id
+// @Router /addresses/{articleId} [put]
 func UpdateAddressById(c *gin.Context){
 	idStr := c.Param("addressId")
 	addressId, err := strconv.Atoi(idStr)
@@ -171,6 +279,16 @@ func UpdateAddressById(c *gin.Context){
 	}
 }
 
+// @Summary Delete Address By Address Id
+// @Schemes
+// @Description Delete address by address id
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Param ID query int true "the id of a specfic address"
+// @Success 200 {json} delete successfully
+// @Failure 400 invalid address id
+// @Router /addresses/ [delete]
 func DeleteAddressById(c *gin.Context){
 	idStr := c.Param("addressId")
 	addressId, err := strconv.Atoi(idStr)

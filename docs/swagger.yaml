@@ -1,0 +1,277 @@
+info:
+  contact: {}
+paths:
+  /addresses:
+    get:
+      consumes:
+      - application/json
+      description: List all addresses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "500":
+          description: Internal Server Error
+          schema:
+            type: internal
+      summary: List All Addresses
+      tags:
+      - Addresses
+  /addresses/:
+    delete:
+      consumes:
+      - application/json
+      description: Delete address by address id
+      parameters:
+      - description: the id of a specfic address
+        in: query
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Delete Address By Address Id
+      tags:
+      - Addresses
+    post:
+      consumes:
+      - application/json
+      description: Create Address
+      parameters:
+      - description: Street Number
+        in: query
+        name: street_number
+        type: string
+      - description: Street Name Line 1
+        in: query
+        name: street_name_1
+        type: string
+      - description: Street Name Line 2
+        in: query
+        name: street_name_2
+        type: string
+      - description: City
+        in: query
+        name: city
+        type: string
+      - description: Region
+        in: query
+        name: region
+        type: string
+      - description: Country Code
+        in: query
+        name: country_code
+        type: string
+      - description: Postal Code
+        in: query
+        name: postal_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Create Address
+      tags:
+      - Addresses
+  /addresses/{addresseId}:
+    get:
+      consumes:
+      - application/json
+      description: Get addresses by addresses id
+      parameters:
+      - description: the id of a specfic addresses
+        in: path
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Get Address By Address Id
+      tags:
+      - Addresses
+  /addresses/{articleId}:
+    put:
+      consumes:
+      - application/json
+      description: Update address by address id
+      parameters:
+      - description: the id of a specfic address
+        in: path
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Update Address By Address Id
+      tags:
+      - Addresses
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: List all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "500":
+          description: Internal Server Error
+          schema:
+            type: internal
+      summary: List All Users
+      tags:
+      - Users
+  /users/:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user by user id
+      parameters:
+      - description: the id of a specfic user
+        in: query
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Delete User By User Id
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Create User
+      parameters:
+      - description: First Name
+        in: query
+        name: first_name
+        type: string
+      - description: Last Name
+        in: query
+        name: last_name
+        type: string
+      - description: Phone Number
+        in: query
+        name: phone_number
+        type: string
+      - description: Email
+        in: query
+        name: email
+        type: string
+      - description: Address ID
+        in: query
+        name: address_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Create User
+      tags:
+      - Users
+  /users/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Get user by user id
+      parameters:
+      - description: the id of a specfic user
+        in: path
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Get User By User Id
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update user by user id
+      parameters:
+      - description: the id of a specfic user
+        in: path
+        name: ID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: json
+        "400":
+          description: Bad Request
+          schema:
+            type: invalid
+      summary: Update User By User Id
+      tags:
+      - Users
+swagger: "2.0"
