@@ -9,6 +9,9 @@ require (
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/sirupsen/logrus v1.8.1
+	github.com/smartystreets/assertions v1.2.1 // indirect
+	github.com/smartystreets/gunit v1.4.3 // indirect
+	github.com/smartystreets/smartystreets-go-sdk v1.13.3 // indirect
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
 	github.com/swaggo/gin-swagger v1.3.2 // indirect
 	github.com/swaggo/swag v1.7.3 // indirect
