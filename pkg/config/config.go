@@ -15,6 +15,11 @@ type Config struct {
 		Password     string `yaml:"password"`
 		DatabaseName string `yaml:"dbname"`
 	}
+	OAuth struct {
+		ClientID 		 string `yaml:"clientID"`
+		ClientSecret 	 string `yaml:"clientSecret"`
+		OauthStateString string `yaml:"oauthStateString"`
+	}
 }
 
 var Configuration Config
