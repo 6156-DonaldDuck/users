@@ -7,9 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ListUsers() ([]model.User, error) {
+func ListUsers(offset int, limit int) ([]model.User, error) {
 	var users []model.User
-	result := db.DbConn.Find(&users)
+	result := db.DbConn.Limit(limit).Offset(offset).Find(&users)
 	if result.Error != nil {
 		log.Errorf("[service.ListUsers] error occurred while listing users, err=%v\n", result.Error)
 	} else {
@@ -20,6 +20,7 @@ func ListUsers() ([]model.User, error) {
 
 func GetUserById(userId uint) (model.User, error) {
 	user := model.User{}
+
 	result := db.DbConn.First(&user, userId)
 	if result.Error != nil {
 		log.Errorf("[service.GetUserById] error occurred while getting user with id %v, err=%v\n", userId, result.Error)
@@ -60,9 +61,9 @@ func UpdateUser(updateInfo model.User) (error){
 	return result.Error
 }
 
-func ListAddresses() ([]model.Address, error) {
+func ListAddresses(offset int, limit int) ([]model.Address, error) {
 	var addresses []model.Address
-	result := db.DbConn.Find(&addresses)
+	result := db.DbConn.Limit(limit).Offset(offset).Find(&addresses)
 	if result.Error != nil {
 		log.Errorf("[service.ListAddresses] error occurred while listing address, err=%v\n", result.Error)
 	} else {

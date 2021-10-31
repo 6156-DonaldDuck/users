@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	docs "github.com/6156-DonaldDuck/users/docs"
 	"github.com/6156-DonaldDuck/users/pkg/auth"
@@ -12,13 +13,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 )
 
-const(
-	StatusNotFound = "record not found"
-)
+
 
 func InitRouter() {
 	r := gin.Default()
@@ -65,7 +65,21 @@ func InitRouter() {
 // @Failure 500 internal server error
 // @Router /users [get]
 func ListUsers(c *gin.Context) {
-	users, err := service.ListUsers()
+	offsetStr := c.Param("offset")
+	limitStr := c.Param("limit")
+	offset, errOffset := strconv.Atoi(offsetStr)
+	limit, errLimit := strconv.Atoi(limitStr)
+	if errOffset != nil {
+		log.Errorf("[router.ListUsers] failed to parse offset %v, err=%v\n", offsetStr, errOffset)
+		c.JSON(http.StatusBadRequest, "invalid offset")
+		return
+	}
+	if errLimit != nil {
+		log.Errorf("[router.ListUsers] failed to parse limit %v, err=%v\n", limitStr, errLimit)
+		c.JSON(http.StatusBadRequest, "invalid limit")
+		return
+	}
+	users, err := service.ListUsers(offset, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "internal server error")
 	} else {
@@ -93,12 +107,12 @@ func GetUserById(c *gin.Context) {
 	}
 	user, err := service.GetUserById(uint(userId))
 	if err != nil {
-		if err.Error() == StatusNotFound{
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, err.Error())
-		} else{
-			c.JSON(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Error(err)
 		}
-	} else {
+	} else{
 		c.JSON(http.StatusOK, user)
 	}
 }
@@ -147,6 +161,12 @@ func CreateUser(c *gin.Context){
 	user := model.User{}
 	if err := c.ShouldBind(&user); err != nil{
 		c.JSON(http.StatusBadRequest, err)
+	}
+	if user.ID != 0{
+		_, err := service.GetUserById(user.ID)
+		if err == nil {
+			c.JSON(http.StatusUnprocessableEntity, "Duplicate key")
+		}
 	}
 	userId, err := service.CreateUser(user)
 	if err != nil {
@@ -199,11 +219,25 @@ func UpdateUserById(c *gin.Context){
 // @Failure 500 internal server error
 // @Router /addresses [get]
 func ListAddresses(c *gin.Context) {
-	users, err := service.ListAddresses()
+	offsetStr := c.Param("offset")
+	limitStr := c.Param("limit")
+	offset, errOffset := strconv.Atoi(offsetStr)
+	limit, errLimit := strconv.Atoi(limitStr)
+	if errOffset != nil {
+		log.Errorf("[router.ListAddresses] failed to parse offset %v, err=%v\n", offsetStr, errOffset)
+		c.JSON(http.StatusBadRequest, "invalid offset")
+		return
+	}
+	if errLimit != nil {
+		log.Errorf("[router.ListAddresses] failed to parse limit %v, err=%v\n", limitStr, errLimit)
+		c.JSON(http.StatusBadRequest, "invalid limit")
+		return
+	}
+	addresses, err := service.ListAddresses(offset, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "internal server error")
 	} else {
-		c.JSON(http.StatusOK, users)
+		c.JSON(http.StatusOK, addresses)
 	}
 }
 
@@ -227,7 +261,7 @@ func GetAddressById(c *gin.Context) {
 	}
 	address, err := service.GetAddressById(uint(addressId))
 	if err != nil {
-		if err.Error() == StatusNotFound{
+		if errors.Is(err, gorm.ErrRecordNotFound){
 			c.JSON(http.StatusNotFound, err.Error())
 		} else{
 			c.JSON(http.StatusInternalServerError, err.Error())
@@ -257,6 +291,12 @@ func CreateAddress(c *gin.Context){
 	address := model.Address{}
 	if err := c.ShouldBind(&address); err != nil{
 		c.JSON(http.StatusBadRequest, err)
+	}
+	if address.ID != 0{
+		_, err := service.GetUserById(address.ID)
+		if err == nil {
+			c.JSON(http.StatusUnprocessableEntity, "Duplicate key")
+		}
 	}
 	addressId, err := service.CreateAddress(address)
 	if err != nil {
@@ -334,7 +374,7 @@ func GetAddressByUserId(c *gin.Context){
 	}
 	address, err := service.GetAddressByUserId(uint(userId))
 	if err != nil {
-		if err.Error() == StatusNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound){
 			c.JSON(http.StatusNotFound, err.Error())
 		} else{
 			c.JSON(http.StatusInternalServerError, err.Error())
