@@ -5,6 +5,9 @@ import (
 	"github.com/6156-DonaldDuck/users/pkg/db"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	log "github.com/sirupsen/logrus"
+	"context"
+	"github.com/smartystreets/smartystreets-go-sdk/us-street-api"
+	"github.com/smartystreets/smartystreets-go-sdk/wireup"
 )
 
 func ListUsers(offset int, limit int) ([]model.User, error) {
@@ -84,6 +87,12 @@ func GetAddressById(addressId uint) (model.Address, error) {
 }
 
 func CreateAddress(address model.Address) (uint, error) {
+	err := VerifyUSStreetAddress(address)
+	if err != nil {
+		return 0, err
+	} else {
+		log.Infof("[service.CreateAddress] successfully verified address\n")
+	}
 	result := db.DbConn.Create(&address)
 	if result.Error != nil {
 		log.Errorf("[service.CreateAddress] error occurred while creating address, err=%v\n", result.Error)
@@ -94,6 +103,12 @@ func CreateAddress(address model.Address) (uint, error) {
 }
 
 func UpdateAddressById(updateInfo model.Address) (error){
+	err := VerifyUSStreetAddress(updateInfo)
+	if err != nil {
+		return err
+	} else {
+		log.Infof("[service.CreateAddress] successfully verified address\n")
+	}
 	result := db.DbConn.Model(&updateInfo).Updates(updateInfo)
 	if result.Error != nil {
 		log.Errorf("[service.UpdateAddress] error occurred while updating address, err=%v\n", result.Error)
@@ -130,4 +145,43 @@ func GetAddressByUserId(userId uint) (model.Address, error) {
 		return address, err
 	}
 	return address, err
+}
+
+func VerifyUSStreetAddress(address model.Address) (error) {
+	client := wireup.BuildUSStreetAPIClient(
+		wireup.SecretKeyCredential("2a2e8396-bfba-7363-7978-c189477b1291", "r3LK0jgf3N8HAsYU0ZqS"),
+		// The appropriate license values to be used for your subscriptions
+		// can be found on the Subscriptions page the account dashboard.
+		// https://www.smartystreets.com/docs/cloud/licensing
+		// wireup.WithLicenses("us-rooftop-geocoding-cloud"),
+		// wireup.ViaProxy("https://my-proxy.my-company.com"), // uncomment this line to point to the specified proxy.
+		// wireup.DebugHTTPOutput(), // uncomment this line to see detailed HTTP request/response information.
+		// ...or maybe you want to supply your own http client:
+		// wireup.WithHTTPClient(&http.Client{Timeout: time.Second * 30})
+	)
+	lookup1 := &street.Lookup{
+		Street:        address.StreetName1,
+		Street2:       address.StreetName2,
+		Urbanization:  "", // Only applies to Puerto Rico addresses
+		City:          address.City,
+		State:         address.Region,
+		ZIPCode:       address.PostalCode,
+		MaxCandidates: 3,
+		MatchStrategy: street.MatchStrict, 
+	}
+
+	batch := street.NewBatch()
+	batch.Append(lookup1)
+	if err := client.SendBatchWithContext(context.Background(), batch); err != nil {
+		log.Errorf("[service.VerifyUSStreetAddress] error occurred while sending request to smartystreet\n")
+		return err
+	}
+
+	for _, input := range batch.Records() {
+		if len(input.Results) == 0 {
+			log.Errorf("[service.VerifyUSStreetAddress] invalid input address\n")
+			return errors.New("invalid input address")
+		}
+	}
+	return nil
 }
