@@ -1,17 +1,19 @@
 package router
 
 import (
+	"fmt"
+	docs "github.com/6156-DonaldDuck/users/docs"
+	"github.com/6156-DonaldDuck/users/pkg/auth"
 	"github.com/6156-DonaldDuck/users/pkg/config"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	"github.com/6156-DonaldDuck/users/pkg/service"
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	docs "github.com/6156-DonaldDuck/users/docs"
+	"net/http"
+	"strconv"
 )
 
 
@@ -38,7 +40,13 @@ func InitRouter() {
 	// r.POST( "/api/v1/users/:userId/address", SetAddressByUserId)
 	// r.GET( "/api/v1/addresses/:addressId/users", ListUsersByAddressId)
 	// not sure what this means
-	// r.POST( "/api/v1/addresses/:id/users", ) 
+	// r.POST( "/api/v1/addresses/:id/users", )
+
+	// google oauth apis
+	r.GET("/api/v1/login/google/url", GetGoogleLoginUrl)
+	r.POST("/api/v1/login/google/callback", GoogleLoginCallback)
+	r.GET("/api/v1/users/google/profile", GetGoogleUserProfile)
+
 	r.Run(":" + config.Configuration.Port)
 }
 
@@ -315,8 +323,69 @@ func GetAddressByUserId(c *gin.Context){
 	}
 	address, err := service.GetAddressByUserId(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
 	} else {
 		c.JSON(http.StatusOK, address)
+	}
+}
+
+func GetGoogleLoginUrl(c *gin.Context) {
+	loginUrl, err := service.BuildGoogleOAuthLoginURL()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+	} else {
+		c.JSON(http.StatusOK, loginUrl)
+	}
+}
+
+func GoogleLoginCallback(c *gin.Context) {
+	params := make(map[string]string)
+	if err := c.ShouldBind(&params); err != nil {
+		log.Error(err)
+		c.Error(err)
+		return
+	} else {
+		log.Infof("params=%v\n", params)
+	}
+	state := params["state"]
+	code := params["code"]
+
+	log.Infof("state=%s, code=%s\n", state, code)
+
+	token, err := service.GoogleOAuthCallbackHandler(c, state, code)
+	if err != nil {
+		err = fmt.Errorf("err while handling login callback, err=%v\n", err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	} else {
+		// return the access token to the frontend
+		c.String(http.StatusOK, token.AccessToken)
+		// set the token to the local memory storage
+		auth.TokenStoreInstance.SetToken(token.AccessToken, token)
+	}
+}
+
+func GetGoogleUserProfile(c *gin.Context) {
+	accessToken := c.Query(auth.AccessToken)
+	if accessToken == "" {
+		err := fmt.Errorf("access token should not be empty")
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	token := auth.TokenStoreInstance.GetToken(accessToken)
+	if token == nil {
+		err := fmt.Errorf("token not found for access token=%s", accessToken)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	userProfile, err := service.GetGoogleUserProfile(token)
+	if err != nil {
+		err = fmt.Errorf("failed to verify google oauth token, err=%v\n", err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	} else {
+		c.JSON(http.StatusOK, userProfile)
 	}
 }

@@ -5,3 +5,7 @@ mysql:
   username: dbuser
   password: dbuserdbuser
   dbname: hw1
+oauth:
+  clientID: 979573387363-dt8mhvvau8kebm1102pd1uo7oq54t4u2.apps.googleusercontent.com
+  clientSecret: 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
+  oauthStateString: thisshouldberandom
