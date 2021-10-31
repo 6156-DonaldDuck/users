@@ -1,13 +1,17 @@
 package service
 
 import (
+	"errors"
 	"github.com/6156-DonaldDuck/users/pkg/db"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	log "github.com/sirupsen/logrus"
+<<<<<<< HEAD
 	"errors"
 	"context"
 	"github.com/smartystreets/smartystreets-go-sdk/us-street-api"
 	"github.com/smartystreets/smartystreets-go-sdk/wireup"
+=======
+>>>>>>> c18bc0c14248cd0d0dc6478aa3f5c7eb5b04f37b
 )
 
 func ListUsers() ([]model.User, error) {

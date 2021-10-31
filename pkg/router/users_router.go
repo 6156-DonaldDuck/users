@@ -1,19 +1,24 @@
 package router
 
 import (
+	"fmt"
+	docs "github.com/6156-DonaldDuck/users/docs"
+	"github.com/6156-DonaldDuck/users/pkg/auth"
 	"github.com/6156-DonaldDuck/users/pkg/config"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	"github.com/6156-DonaldDuck/users/pkg/service"
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	docs "github.com/6156-DonaldDuck/users/docs"
+	"net/http"
+	"strconv"
 )
 
+const(
+	StatusNotFound = "record not found"
+)
 
 func InitRouter() {
 	r := gin.Default()
@@ -38,7 +43,13 @@ func InitRouter() {
 	// r.POST( "/api/v1/users/:userId/address", SetAddressByUserId)
 	// r.GET( "/api/v1/addresses/:addressId/users", ListUsersByAddressId)
 	// not sure what this means
-	// r.POST( "/api/v1/addresses/:id/users", ) 
+	// r.POST( "/api/v1/addresses/:id/users", )
+
+	// google oauth apis
+	r.GET("/api/v1/login/google/url", GetGoogleLoginUrl)
+	r.POST("/api/v1/login/google/callback", GoogleLoginCallback)
+	r.GET("/api/v1/users/google/profile", GetGoogleUserProfile)
+
 	r.Run(":" + config.Configuration.Port)
 }
 
@@ -82,7 +93,11 @@ func GetUserById(c *gin.Context) {
 	}
 	user, err := service.GetUserById(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		if err.Error() == StatusNotFound{
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, user)
 	}
@@ -110,7 +125,7 @@ func DeleteUserById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, "Successfully delete user with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete user with id "+ idStr)
 	}
 }
 
@@ -137,7 +152,7 @@ func CreateUser(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, userId)
+		c.JSON(http.StatusCreated, userId)
 	}
 }
 
@@ -212,7 +227,11 @@ func GetAddressById(c *gin.Context) {
 	}
 	address, err := service.GetAddressById(uint(addressId))
 	if err != nil {
-		c.Error(err)
+		if err.Error() == StatusNotFound{
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, address)
 	}
@@ -243,7 +262,7 @@ func CreateAddress(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, addressId)
+		c.JSON(http.StatusCreated, addressId)
 	}
 }
 
@@ -301,7 +320,7 @@ func DeleteAddressById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, "Successfully delete address with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete address with id "+ idStr)
 	}
 }
 
@@ -315,8 +334,73 @@ func GetAddressByUserId(c *gin.Context){
 	}
 	address, err := service.GetAddressByUserId(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		if err.Error() == StatusNotFound {
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, address)
+	}
+}
+
+func GetGoogleLoginUrl(c *gin.Context) {
+	loginUrl, err := service.BuildGoogleOAuthLoginURL()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+	} else {
+		c.JSON(http.StatusOK, loginUrl)
+	}
+}
+
+func GoogleLoginCallback(c *gin.Context) {
+	params := make(map[string]string)
+	if err := c.ShouldBind(&params); err != nil {
+		log.Error(err)
+		c.Error(err)
+		return
+	} else {
+		log.Infof("params=%v\n", params)
+	}
+	state := params["state"]
+	code := params["code"]
+
+	log.Infof("state=%s, code=%s\n", state, code)
+
+	token, err := service.GoogleOAuthCallbackHandler(c, state, code)
+	if err != nil {
+		err = fmt.Errorf("err while handling login callback, err=%v\n", err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	} else {
+		// return the access token to the frontend
+		c.String(http.StatusOK, token.AccessToken)
+		// set the token to the local memory storage
+		auth.TokenStoreInstance.SetToken(token.AccessToken, token)
+	}
+}
+
+func GetGoogleUserProfile(c *gin.Context) {
+	accessToken := c.Query(auth.AccessToken)
+	if accessToken == "" {
+		err := fmt.Errorf("access token should not be empty")
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	token := auth.TokenStoreInstance.GetToken(accessToken)
+	if token == nil {
+		err := fmt.Errorf("token not found for access token=%s", accessToken)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	userProfile, err := service.GetGoogleUserProfile(token)
+	if err != nil {
+		err = fmt.Errorf("failed to verify google oauth token, err=%v\n", err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	} else {
+		c.JSON(http.StatusOK, userProfile)
 	}
 }
