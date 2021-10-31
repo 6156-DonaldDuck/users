@@ -1,19 +1,22 @@
 package router
 
 import (
+	docs "github.com/6156-DonaldDuck/users/docs"
 	"github.com/6156-DonaldDuck/users/pkg/config"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	"github.com/6156-DonaldDuck/users/pkg/service"
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	docs "github.com/6156-DonaldDuck/users/docs"
+	"net/http"
+	"strconv"
 )
 
+const(
+	StatusNotFound = "record not found"
+)
 
 func InitRouter() {
 	r := gin.Default()
@@ -82,7 +85,11 @@ func GetUserById(c *gin.Context) {
 	}
 	user, err := service.GetUserById(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		if err.Error() == StatusNotFound{
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, user)
 	}
@@ -110,7 +117,7 @@ func DeleteUserById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, "Successfully delete user with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete user with id "+ idStr)
 	}
 }
 
@@ -137,7 +144,7 @@ func CreateUser(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, userId)
+		c.JSON(http.StatusCreated, userId)
 	}
 }
 
@@ -212,7 +219,11 @@ func GetAddressById(c *gin.Context) {
 	}
 	address, err := service.GetAddressById(uint(addressId))
 	if err != nil {
-		c.Error(err)
+		if err.Error() == StatusNotFound{
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, address)
 	}
@@ -243,7 +254,7 @@ func CreateAddress(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, addressId)
+		c.JSON(http.StatusCreated, addressId)
 	}
 }
 
@@ -301,7 +312,7 @@ func DeleteAddressById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusOK, "Successfully delete address with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete address with id "+ idStr)
 	}
 }
 
@@ -315,7 +326,11 @@ func GetAddressByUserId(c *gin.Context){
 	}
 	address, err := service.GetAddressByUserId(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		if err.Error() == StatusNotFound{
+			c.JSON(http.StatusNotFound, err.Error())
+		} else{
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	} else {
 		c.JSON(http.StatusOK, address)
 	}

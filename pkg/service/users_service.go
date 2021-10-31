@@ -1,10 +1,10 @@
 package service
 
 import (
+	"errors"
 	"github.com/6156-DonaldDuck/users/pkg/db"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	log "github.com/sirupsen/logrus"
-	"errors"
 )
 
 func ListUsers() ([]model.User, error) {
