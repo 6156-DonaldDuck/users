@@ -39,17 +39,15 @@ func Security() gin.HandlerFunc {
 			c.Next()
 		} else {
 			// Get access token
-			accessToken := c.Query(auth.AccessToken)
-			if accessToken == "" {
-				accessToken = c.Request.Header.Get("Authorization")
-			}
-			// if token is null
+			accessToken := c.GetHeader("Authorization")
+
+			// if token is empty
 			if accessToken == "" {
 				err := fmt.Errorf("access token should not be empty")
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 				return
 			}
-			// if token is non-exist
+			// if token does not exist
 			token := auth.TokenStoreInstance.GetToken(accessToken)
 			if token == nil {
 				err := fmt.Errorf("token not found for access token=%s", accessToken)

@@ -12,7 +12,6 @@ import (
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	"github.com/6156-DonaldDuck/users/pkg/router/middleware"
 	"github.com/6156-DonaldDuck/users/pkg/service"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
@@ -22,7 +21,7 @@ import (
 
 func InitRouter() {
 	r := gin.Default()
-	r.Use(cors.Default()) // default allows all origin
+	r.Use(middleware.CORSMiddleware()) // use customized cors middleware
 	r.Use(middleware.Security())
 	docs.SwaggerInfo.BasePath = config.Configuration.Mysql.Host
 
@@ -423,18 +422,8 @@ func GoogleLoginCallback(c *gin.Context) {
 }
 
 func GetGoogleUserProfile(c *gin.Context) {
-	accessToken := c.Query(auth.AccessToken)
-	if accessToken == "" {
-		err := fmt.Errorf("access token should not be empty")
-		c.JSON(http.StatusBadRequest, err)
-		return
-	}
+	accessToken := c.GetHeader("Authorization")
 	token := auth.TokenStoreInstance.GetToken(accessToken)
-	if token == nil {
-		err := fmt.Errorf("token not found for access token=%s", accessToken)
-		c.JSON(http.StatusBadRequest, err)
-		return
-	}
 	userProfile, err := service.GetGoogleUserProfile(token)
 	if err != nil {
 		err = fmt.Errorf("failed to verify google oauth token, err=%v\n", err)
