@@ -3,10 +3,14 @@ package router
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	docs "github.com/6156-DonaldDuck/users/docs"
 	"github.com/6156-DonaldDuck/users/pkg/auth"
 	"github.com/6156-DonaldDuck/users/pkg/config"
 	"github.com/6156-DonaldDuck/users/pkg/model"
+	"github.com/6156-DonaldDuck/users/pkg/router/middleware"
 	"github.com/6156-DonaldDuck/users/pkg/service"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -14,32 +18,29 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
-
-
 
 func InitRouter() {
 	r := gin.Default()
 	r.Use(cors.Default()) // default allows all origin
+	r.Use(middleware.Security())
 	docs.SwaggerInfo.BasePath = config.Configuration.Mysql.Host
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// users
-	r.GET( "/api/v1/users", ListUsers)
-	r.GET( "/api/v1/users/:userId", GetUserById)
-	r.POST( "/api/v1/users", CreateUser)
-	r.PUT( "/api/v1/users/:userId", UpdateUserById)
-	r.DELETE( "/api/v1/users/:userId", DeleteUserById)
+	r.GET("/api/v1/users", ListUsers)
+	r.GET("/api/v1/users/:userId", GetUserById)
+	r.POST("/api/v1/users", CreateUser)
+	r.PUT("/api/v1/users/:userId", UpdateUserById)
+	r.DELETE("/api/v1/users/:userId", DeleteUserById)
 	// addresses
-	r.GET( "/api/v1/addresses", ListAddresses)
-	r.GET( "/api/v1/addresses/:addressId", GetAddressById)
-	r.POST( "/api/v1/addresses", CreateAddress)
-	r.PUT( "/api/v1/addresses/:addressId", UpdateAddressById)
-	r.DELETE( "/api/v1/addresses/:addressId", DeleteAddressById)
+	r.GET("/api/v1/addresses", ListAddresses)
+	r.GET("/api/v1/addresses/:addressId", GetAddressById)
+	r.POST("/api/v1/addresses", CreateAddress)
+	r.PUT("/api/v1/addresses/:addressId", UpdateAddressById)
+	r.DELETE("/api/v1/addresses/:addressId", DeleteAddressById)
 	// // user + address
-	r.GET( "/api/v1/users/:userId/address", GetAddressByUserId)
+	r.GET("/api/v1/users/:userId/address", GetAddressByUserId)
 	// r.POST( "/api/v1/users/:userId/address", SetAddressByUserId)
 	// r.GET( "/api/v1/addresses/:addressId/users", ListUsersByAddressId)
 	// not sure what this means
@@ -112,7 +113,7 @@ func GetUserById(c *gin.Context) {
 		} else {
 			c.Error(err)
 		}
-	} else{
+	} else {
 		c.JSON(http.StatusOK, user)
 	}
 }
@@ -127,7 +128,7 @@ func GetUserById(c *gin.Context) {
 // @Success 200 {json} delete successfully
 // @Failure 400 invalid user id
 // @Router /users/ [delete]
-func DeleteUserById(c *gin.Context){
+func DeleteUserById(c *gin.Context) {
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -139,7 +140,7 @@ func DeleteUserById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusNoContent, "Successfully delete user with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete user with id "+idStr)
 	}
 }
 
@@ -157,12 +158,12 @@ func DeleteUserById(c *gin.Context){
 // @Success 200 {json} user id
 // @Failure 400 invalid user id
 // @Router /users/ [post]
-func CreateUser(c *gin.Context){
+func CreateUser(c *gin.Context) {
 	user := model.User{}
-	if err := c.ShouldBind(&user); err != nil{
+	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
-	if user.ID != 0{
+	if user.ID != 0 {
 		_, err := service.GetUserById(user.ID)
 		if err == nil {
 			c.JSON(http.StatusUnprocessableEntity, "Duplicate key")
@@ -186,7 +187,7 @@ func CreateUser(c *gin.Context){
 // @Success 200 {json} update successfully
 // @Failure 400 invalid user id
 // @Router /users/{userId} [put]
-func UpdateUserById(c *gin.Context){
+func UpdateUserById(c *gin.Context) {
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -195,7 +196,7 @@ func UpdateUserById(c *gin.Context){
 		return
 	}
 	updateInfo := model.User{}
-	if err := c.ShouldBind(&updateInfo); err != nil{
+	if err := c.ShouldBind(&updateInfo); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
 	updateInfo.ID = uint(userId)
@@ -261,9 +262,9 @@ func GetAddressById(c *gin.Context) {
 	}
 	address, err := service.GetAddressById(uint(addressId))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound){
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, err.Error())
-		} else{
+		} else {
 			c.JSON(http.StatusInternalServerError, err.Error())
 		}
 	} else {
@@ -287,12 +288,12 @@ func GetAddressById(c *gin.Context) {
 // @Success 200 {json} address id
 // @Failure 400 invalid address id
 // @Router /addresses/ [post]
-func CreateAddress(c *gin.Context){
+func CreateAddress(c *gin.Context) {
 	address := model.Address{}
-	if err := c.ShouldBind(&address); err != nil{
+	if err := c.ShouldBind(&address); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
-	if address.ID != 0{
+	if address.ID != 0 {
 		_, err := service.GetUserById(address.ID)
 		if err == nil {
 			c.JSON(http.StatusUnprocessableEntity, "Duplicate key")
@@ -316,7 +317,7 @@ func CreateAddress(c *gin.Context){
 // @Success 200 {json} update successfully
 // @Failure 400 invalid address id
 // @Router /addresses/{articleId} [put]
-func UpdateAddressById(c *gin.Context){
+func UpdateAddressById(c *gin.Context) {
 	idStr := c.Param("addressId")
 	addressId, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -348,7 +349,7 @@ func UpdateAddressById(c *gin.Context){
 // @Success 200 {json} delete successfully
 // @Failure 400 invalid address id
 // @Router /addresses/ [delete]
-func DeleteAddressById(c *gin.Context){
+func DeleteAddressById(c *gin.Context) {
 	idStr := c.Param("addressId")
 	addressId, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -360,11 +361,11 @@ func DeleteAddressById(c *gin.Context){
 	if err != nil {
 		c.Error(err)
 	} else {
-		c.JSON(http.StatusNoContent, "Successfully delete address with id "+ idStr)
+		c.JSON(http.StatusNoContent, "Successfully delete address with id "+idStr)
 	}
 }
 
-func GetAddressByUserId(c *gin.Context){
+func GetAddressByUserId(c *gin.Context) {
 	idStr := c.Param("userId")
 	userId, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -374,9 +375,9 @@ func GetAddressByUserId(c *gin.Context){
 	}
 	address, err := service.GetAddressByUserId(uint(userId))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound){
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, err.Error())
-		} else{
+		} else {
 			c.JSON(http.StatusInternalServerError, err.Error())
 		}
 	} else {
