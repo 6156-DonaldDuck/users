@@ -100,3 +100,17 @@ func GetGoogleUserProfile(token *oauth2.Token) (*model.GoogleUserProfile, error)
 	}
 	return &userProfile, nil
 }
+
+func GetDBUserRelatedToGoogleUser(profile *model.GoogleUserProfile) (*model.User, error) {
+	email := profile.Email
+	return GetUserByEmail(email)
+}
+
+func CreateDBUserRelatedToGoogleUser(profile *model.GoogleUserProfile) (uint, error) {
+	user := model.User{
+		FirstName: profile.GivenName,
+		LastName: profile.FamilyName,
+		Email: profile.Email,
+	}
+	return CreateUser(user)
+}
