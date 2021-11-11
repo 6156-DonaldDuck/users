@@ -413,12 +413,31 @@ func GoogleLoginCallback(c *gin.Context) {
 		log.Error(err)
 		c.JSON(http.StatusBadRequest, err)
 		return
-	} else {
-		// return the access token to the frontend
-		c.String(http.StatusOK, token.AccessToken)
-		// set the token to the local memory storage
-		auth.TokenStoreInstance.SetToken(token.AccessToken, token)
 	}
+
+	// create a user in the database for the google user if not exist
+	googleProfile, err := service.GetGoogleUserProfile(token)
+	if err != nil {
+		err = fmt.Errorf("failed to get google profile, err=%v\n", err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	dbUser, _ := service.GetDBUserRelatedToGoogleUser(googleProfile)
+	if dbUser == nil { // the Google user is not related to a db user yet
+		userId, err := service.CreateDBUserRelatedToGoogleUser(googleProfile)
+		if err != nil {
+			err = fmt.Errorf("failed to create db user for google user, err=%v", err)
+			log.Error(err)
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+		log.Infof("created db user %d for Google user with email %s\n", userId, googleProfile.Email)
+	}
+	// return the access token to the frontend
+	c.String(http.StatusOK, token.AccessToken)
+	// set the token to the local memory storage
+	auth.TokenStoreInstance.SetToken(token.AccessToken, token)
 }
 
 func GetGoogleUserProfile(c *gin.Context) {
@@ -426,7 +445,7 @@ func GetGoogleUserProfile(c *gin.Context) {
 	token := auth.TokenStoreInstance.GetToken(accessToken)
 	userProfile, err := service.GetGoogleUserProfile(token)
 	if err != nil {
-		err = fmt.Errorf("failed to verify google oauth token, err=%v\n", err)
+		err = fmt.Errorf("failed to get google user profile, err=%v\n", err)
 		log.Error(err)
 		c.JSON(http.StatusBadRequest, err)
 		return
