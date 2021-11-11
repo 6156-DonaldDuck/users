@@ -10,15 +10,19 @@ import (
 	"github.com/smartystreets/smartystreets-go-sdk/wireup"
 )
 
-func ListAddresses(offset int, limit int) ([]model.Address, error) {
+func ListAddresses(offset int, limit int) ([]model.Address, int, error) {
 	var addresses []model.Address
+	var totalCount int64
 	result := db.DbConn.Limit(limit).Offset(offset).Find(&addresses)
+
 	if result.Error != nil {
 		log.Errorf("[service.ListAddresses] error occurred while listing address, err=%v\n", result.Error)
 	} else {
 		log.Infof("[service.ListAddresses] successfully listed address, rows affected = %v\n", result.RowsAffected)
 	}
-	return addresses, result.Error
+	db.DbConn.Model(model.Address{}).Count(&totalCount)
+
+	return addresses, int(totalCount), result.Error
 }
 
 func GetAddressById(addressId uint) (model.Address, error) {

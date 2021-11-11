@@ -6,15 +6,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ListUsers(offset int, limit int) ([]model.User, error) {
+func ListUsers(offset int, limit int) ([]model.User, int, error) {
 	var users []model.User
+	var totalCount int64
 	result := db.DbConn.Limit(limit).Offset(offset).Find(&users)
+
 	if result.Error != nil {
 		log.Errorf("[service.ListUsers] error occurred while listing users, err=%v\n", result.Error)
 	} else {
 		log.Infof("[service.ListUsers] successfully listed users, rows affected = %v\n", result.RowsAffected)
 	}
-	return users, result.Error
+	db.DbConn.Model(model.User{}).Count(&totalCount)
+
+	return users, int(totalCount), result.Error
 }
 
 func GetUserById(userId uint) (model.User, error) {
