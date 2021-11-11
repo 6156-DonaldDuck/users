@@ -423,9 +423,10 @@ func GoogleLoginCallback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
+	var userId uint
 	dbUser, _ := service.GetDBUserRelatedToGoogleUser(googleProfile)
 	if dbUser == nil { // the Google user is not related to a db user yet
-		userId, err := service.CreateDBUserRelatedToGoogleUser(googleProfile)
+		userId, err = service.CreateDBUserRelatedToGoogleUser(googleProfile)
 		if err != nil {
 			err = fmt.Errorf("failed to create db user for google user, err=%v", err)
 			log.Error(err)
@@ -433,9 +434,14 @@ func GoogleLoginCallback(c *gin.Context) {
 			return
 		}
 		log.Infof("created db user %d for Google user with email %s\n", userId, googleProfile.Email)
+	} else {
+		userId = dbUser.ID
 	}
-	// return the access token to the frontend
-	c.String(http.StatusOK, token.AccessToken)
+	// return the access token and related user id to the frontend
+	c.JSON(http.StatusOK, model.GoogleLoginCallbackResponse{
+		AccessToken: token.AccessToken,
+		UserId: userId,
+	})
 	// set the token to the local memory storage
 	auth.TokenStoreInstance.SetToken(token.AccessToken, token)
 }
