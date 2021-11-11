@@ -35,13 +35,11 @@ func GetUserByEmail(email string) (*model.User, error) {
 	result := db.DbConn.Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		log.Errorf("[service.GetUserByEmail] error occurred while getting user with email %v, err=%v\n", email, result.Error)
+		return nil, result.Error
 	} else {
 		log.Infof("[service.GetUserByEmail] successfully got user with email %v, rows affected = %v\n", email, result.RowsAffected)
+		return &user, nil
 	}
-	if result.RowsAffected == 0 {
-		return nil, result.Error
-	}
-	return &user, result.Error
 }
 
 func DeleteUserById(userId uint) error {

@@ -423,13 +423,7 @@ func GoogleLoginCallback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
-	dbUser, err := service.GetDBUserRelatedToGoogleUser(googleProfile)
-	if err != nil {
-		err = fmt.Errorf("failed to retrieve db user for google user, err=%v", err)
-		log.Error(err)
-		c.JSON(http.StatusBadRequest, err)
-		return
-	}
+	dbUser, _ := service.GetDBUserRelatedToGoogleUser(googleProfile)
 	if dbUser == nil { // the Google user is not related to a db user yet
 		userId, err := service.CreateDBUserRelatedToGoogleUser(googleProfile)
 		if err != nil {

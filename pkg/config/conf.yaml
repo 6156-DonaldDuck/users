@@ -1,6 +1,6 @@
 port: 8080
 mysql:
-  host: e6156-db.c890fe3d965k.us-east-2.rds.amazonaws.com
+  host: e6156-db.clxkc1uvbaql.us-east-1.rds.amazonaws.com
   port: 3306
   username: dbuser
   password: dbuserdbuser
