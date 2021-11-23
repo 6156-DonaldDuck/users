@@ -18,7 +18,6 @@ func InitRouter() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	InitUserRouters(r)
-	InitAddressRouters(r)
 	InitAuthRouters(r)
 
 	r.Run(":" + config.Configuration.Port)
