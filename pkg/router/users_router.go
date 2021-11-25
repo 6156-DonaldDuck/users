@@ -64,21 +64,6 @@ func ListUsers(c *gin.Context) {
 		})
 	}
 }
-func SendPostAsync(url string, body []byte, rc chan *http.Response) {
-	response, err := http.Post(url, "application/json", bytes.NewReader(body))
-	if err != nil {
-		panic(err)
-	}
-	rc <- response
-}
-
-func SendGetAsync(url string, rc chan *http.Response) {
-	response, err := http.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	rc <- response
-}
 
 // @Summary Get User By User Id
 // @Schemes
@@ -201,7 +186,6 @@ func CreateUser(c *gin.Context) {
 }
 
 func CreateComposition(c *gin.Context) {
-
 	composition :=model.Composition{}
 	if err := c.ShouldBind(&composition); err != nil {
 		c.JSON(http.StatusBadRequest, err)
@@ -229,6 +213,7 @@ func CreateComposition(c *gin.Context) {
 		c.JSON(http.StatusCreated, userId)
 	}
 }
+
 // @Summary Update User By User Id
 // @Schemes
 // @Description Update user by user id
@@ -258,4 +243,20 @@ func UpdateUserById(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, "update successfully")
 	}
+}
+
+func SendPostAsync(url string, body []byte, rc chan *http.Response) {
+	response, err := http.Post(url, "application/json", bytes.NewReader(body))
+	if err != nil {
+		panic(err)
+	}
+	rc <- response
+}
+
+func SendGetAsync(url string, rc chan *http.Response) {
+	response, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	rc <- response
 }
