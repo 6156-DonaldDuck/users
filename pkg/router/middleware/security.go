@@ -20,7 +20,8 @@ func Security() gin.HandlerFunc {
 			"/api/v1/login/google/url":      {"GET"},
 			"/api/v1/login/google/callback": {"POST"},
 			"/api/v1/users":                 {"GET", "POST"},
-			"/api/v1/compositions":          {"GET", "POST"},
+			"/api/v1/compositions":         {"GET", "POST"},
+			"/api/v1/compositions/:userId":  {"GET", "POST"},
 			"/api/v1/users/:userId":         {"GET", "PUT"},
 		}
 

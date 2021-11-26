@@ -99,32 +99,49 @@ func GetUserById(c *gin.Context) {
 func GetComposedInfoById(c *gin.Context) {
 	composition :=model.Composition{}
 	idStr := c.Param("userId")
-	userId, err := strconv.Atoi(idStr)
+
+	_, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Errorf("[router.GetUserById] failed to parse user id %v, err=%v\n", idStr, err)
+		log.Errorf("[router.GetComposedInfoById] failed to parse user id %v, err=%v\n", idStr, err)
 		c.JSON(http.StatusBadRequest, "invalid user id")
 		return
 	}
-	user, err := service.GetUserById(uint(userId))
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, err.Error())
-		} else {
-			c.Error(err)
-		}
-	} else {
-		composition.User = user
-		addressUrl := "http://localhost:8085/api/v1/users/"
-		address := make(chan *http.Response)
-		go SendGetAsync(addressUrl+idStr+"/address", address)
-		addressResponse := <- address
-		defer addressResponse.Body.Close()
-		bytes, _ := ioutil.ReadAll(addressResponse.Body)
-		jsonStr := string(bytes)
-		err = json.Unmarshal([]byte(jsonStr), &composition.Address)
 
-		c.JSON(http.StatusOK, composition)
+	// get user info
+	userUrl := "http://localhost:8080/api/v1/users/"
+	user := make(chan *http.Response)
+	go SendGetAsync(userUrl+idStr, user)
+	userResponse := <- user
+	defer userResponse.Body.Close()
+	bytes, _ := ioutil.ReadAll(userResponse.Body)
+	jsonStr := string(bytes)
+	err = json.Unmarshal([]byte(jsonStr), &composition.User)
+
+	if err != nil {
+		log.Errorf("[router.GetComposedInfoById] failed to parse user with id =%v, err=%v\n", idStr, err)
+		c.JSON(http.StatusBadRequest, "invalid user")
+		return
 	}
+
+	// get address info
+	addressUrl := "http://localhost:8085/api/v1/users/"
+	address := make(chan *http.Response)
+	go SendGetAsync(addressUrl+idStr+"/address", address)
+	addressResponse := <- address
+	defer addressResponse.Body.Close()
+	bytes, _ = ioutil.ReadAll(addressResponse.Body)
+	jsonStr = string(bytes)
+	err = json.Unmarshal([]byte(jsonStr), &composition.Address)
+
+	// Temporarily comment this part. Because even when address is null, function should return a composition.
+
+	//if err != nil {
+	//	log.Errorf("[router.GetComposedInfoById] failed to parse address with its id =%v, err=%v\n", idStr, err)
+	//	c.JSON(http.StatusBadRequest, "invalid address")
+	//	return
+	//}
+
+	c.JSON(http.StatusOK, composition)
 }
 // @Summary Delete User By User Id
 // @Schemes
