@@ -1,7 +1,11 @@
 package router
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -15,7 +19,9 @@ import (
 func InitUserRouters(r *gin.Engine) {
 	r.GET("/api/v1/users", ListUsers)
 	r.GET("/api/v1/users/:userId", GetUserById)
+	r.GET("/api/v1/compositions/:userId", GetComposedInfoById)
 	r.POST("/api/v1/users", CreateUser)
+	r.POST("/api/v1/compositions", CreateComposition)
 	r.PUT("/api/v1/users/:userId", UpdateUserById)
 	r.DELETE("/api/v1/users/:userId", DeleteUserById)
 }
@@ -89,6 +95,54 @@ func GetUserById(c *gin.Context) {
 	}
 }
 
+
+func GetComposedInfoById(c *gin.Context) {
+	composition :=model.Composition{}
+	idStr := c.Param("userId")
+
+	_, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Errorf("[router.GetComposedInfoById] failed to parse user id %v, err=%v\n", idStr, err)
+		c.JSON(http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	// get user info
+	userUrl := "http://localhost:8080/api/v1/users/"
+	user := make(chan *http.Response)
+	go SendGetAsync(userUrl+idStr, user)
+	userResponse := <- user
+	defer userResponse.Body.Close()
+	bytes, _ := ioutil.ReadAll(userResponse.Body)
+	jsonStr := string(bytes)
+	err = json.Unmarshal([]byte(jsonStr), &composition.User)
+
+	if err != nil {
+		log.Errorf("[router.GetComposedInfoById] failed to parse user with id =%v, err=%v\n", idStr, err)
+		c.JSON(http.StatusBadRequest, "invalid user")
+		return
+	}
+
+	// get address info
+	addressUrl := "http://localhost:8085/api/v1/users/"
+	address := make(chan *http.Response)
+	go SendGetAsync(addressUrl+idStr+"/address", address)
+	addressResponse := <- address
+	defer addressResponse.Body.Close()
+	bytes, _ = ioutil.ReadAll(addressResponse.Body)
+	jsonStr = string(bytes)
+	err = json.Unmarshal([]byte(jsonStr), &composition.Address)
+
+	// Temporarily comment this part. Because even when address is null, function should return a composition.
+
+	//if err != nil {
+	//	log.Errorf("[router.GetComposedInfoById] failed to parse address with its id =%v, err=%v\n", idStr, err)
+	//	c.JSON(http.StatusBadRequest, "invalid address")
+	//	return
+	//}
+
+	c.JSON(http.StatusOK, composition)
+}
 // @Summary Delete User By User Id
 // @Schemes
 // @Description Delete user by user id
@@ -130,7 +184,7 @@ func DeleteUserById(c *gin.Context) {
 // @Failure 400 invalid user id
 // @Router /users/ [post]
 func CreateUser(c *gin.Context) {
-	user := model.User{}
+	user :=model.User{}
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
@@ -144,6 +198,35 @@ func CreateUser(c *gin.Context) {
 	if err != nil {
 		c.Error(err)
 	} else {
+		c.JSON(http.StatusCreated, userId)
+	}
+}
+
+func CreateComposition(c *gin.Context) {
+	composition :=model.Composition{}
+	if err := c.ShouldBind(&composition); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
+	if composition.User.ID != 0 {
+		_, err := service.GetUserById(composition.User.ID)
+		if err == nil {
+			c.JSON(http.StatusUnprocessableEntity, "Duplicate key")
+		}
+	}
+	userId, err := service.CreateUser(composition.User)
+	if err != nil {
+		c.Error(err)
+	} else {
+		composition.Address.UserId = userId
+		body, _ := json.Marshal(composition.Address)
+		addressChan := make(chan *http.Response)
+		// AddressService is expected at 8085
+		go SendPostAsync("http://localhost:8085/api/v1/addresses", body, addressChan)
+		orderResponse := <-addressChan
+		defer orderResponse.Body.Close()
+		bytes, _ := ioutil.ReadAll(orderResponse.Body)
+		fmt.Println(string(bytes))
+
 		c.JSON(http.StatusCreated, userId)
 	}
 }
@@ -177,4 +260,20 @@ func UpdateUserById(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, "update successfully")
 	}
+}
+
+func SendPostAsync(url string, body []byte, rc chan *http.Response) {
+	response, err := http.Post(url, "application/json", bytes.NewReader(body))
+	if err != nil {
+		panic(err)
+	}
+	rc <- response
+}
+
+func SendGetAsync(url string, rc chan *http.Response) {
+	response, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	rc <- response
 }

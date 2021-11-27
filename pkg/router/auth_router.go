@@ -59,6 +59,11 @@ func GoogleLoginCallback(c *gin.Context) {
 	var userId uint
 	dbUser, _ := service.GetDBUserRelatedToGoogleUser(googleProfile)
 	if dbUser == nil { // the Google user is not related to a db user yet
+		//err = fmt.Errorf("Failed to login! User is not registered.")
+		//log.Error(err)
+		//c.JSON(http.StatusNotFound, err)
+		//return
+
 		userId, err = service.CreateDBUserRelatedToGoogleUser(googleProfile)
 		if err != nil {
 			err = fmt.Errorf("failed to create db user for google user, err=%v", err)

@@ -10,3 +10,8 @@ type GoogleUserProfile struct {
 	Picture       string `json:"picture"`
 	Locale        string `json:"locale"`
 }
+
+type Composition struct {
+	User            User `json:"user"`
+	Address         Address `json:"address"`
+}
