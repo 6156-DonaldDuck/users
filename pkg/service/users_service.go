@@ -4,6 +4,7 @@ import (
 	"github.com/6156-DonaldDuck/users/pkg/db"
 	"github.com/6156-DonaldDuck/users/pkg/model"
 	log "github.com/sirupsen/logrus"
+	"sync"
 )
 
 func ListUsers(offset int, limit int) ([]model.User, int, error) {
@@ -32,6 +33,51 @@ func GetUserById(userId uint) (model.User, error) {
 	}
 	return user, result.Error
 }
+
+
+func GetUserAddressById(userId uint) (model.UserAddress, error) {
+	user := model.User{}
+	address := model.Address{}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func(userId uint, user *model.User) {
+		result := db.DbConn.First(&user, userId)
+		if result.Error != nil {
+			log.Errorf("[service.GetUserAddressById] error occurred while getting user with id %v, err=%v\n", userId, result.Error)
+		} else {
+			log.Infof("[service.GetUserAddressById] successfully got user with id %v, rows affected = %v\n", userId, result.RowsAffected)
+		}
+		wg.Done()
+	}(userId, &user)
+
+	go func(userId uint, address *model.Address) {
+		result := db.DbConn.Where("user_id = ?", userId).First(&address)
+		if result.Error != nil {
+			log.Errorf("[service.GetAddressByUserId] error occurred while getting address by user id %v, err=%v\n", userId, result.Error)
+		}
+		wg.Done()
+	}(userId, &address)
+	
+	wg.Wait()
+
+	useraddress := model.UserAddress{
+		FirstName: user.FirstName,
+		LastName: user.LastName,
+		PhoneNumber: user.PhoneNumber,
+		Email: user.Email,
+		StreetName1: address.StreetName1,
+		StreetName2: address.StreetName2,
+		City: address.City,
+		Region: address.Region,
+		CountryCode: address.CountryCode,
+		PostalCode: address.PostalCode,
+	}
+
+	return useraddress, nil
+}
+
 
 func GetUserByEmail(email string) (*model.User, error) {
 	user := model.User{}

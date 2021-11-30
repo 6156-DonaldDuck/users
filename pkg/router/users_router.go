@@ -15,6 +15,7 @@ import (
 func InitUserRouters(r *gin.Engine) {
 	r.GET("/api/v1/users", ListUsers)
 	r.GET("/api/v1/users/:userId", GetUserById)
+	r.GET("/api/v1/users_address/:userId", GetUserAddressById)
 	r.POST("/api/v1/users", CreateUser)
 	r.PUT("/api/v1/users/:userId", UpdateUserById)
 	r.DELETE("/api/v1/users/:userId", DeleteUserById)
@@ -86,6 +87,36 @@ func GetUserById(c *gin.Context) {
 		}
 	} else {
 		c.JSON(http.StatusOK, user)
+	}
+}
+
+// @Summary Get User Address By User Id
+// @Schemes
+// @Description Get user and address by user id
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param ID path int true "the id of a specfic user"
+// @Success 200 {json} user
+// @Failure 400 invalid user id
+// @Router /users_address/{userId} [get]
+func GetUserAddressById(c *gin.Context) {
+	idStr := c.Param("userId")
+	userId, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Errorf("[router.GetUserAddressById] failed to parse user id %v, err=%v\n", idStr, err)
+		c.JSON(http.StatusBadRequest, "invalid user id")
+		return
+	}
+	user_address, err := service.GetUserAddressById(uint(userId))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, err.Error())
+		} else {
+			c.Error(err)
+		}
+	} else {
+		c.JSON(http.StatusOK, user_address)
 	}
 }
 

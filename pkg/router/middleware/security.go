@@ -21,6 +21,7 @@ func Security() gin.HandlerFunc {
 			"/api/v1/login/google/callback": {"POST"},
 			"/api/v1/users":                 {"GET", "POST"},
 			"/api/v1/users/:userId":         {"GET", "PUT"},
+			"/api/v1/users_address/:userId": {"GET"},
 		}
 
 		// Figure out whether current request is in white list.
