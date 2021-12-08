@@ -2,7 +2,7 @@ package auth
 
 const (
 	AccessToken string = "access_token"
-	RedirectUrl string = "https://d1tgjm3j2gra7n.cloudfront.net/google-login/callback"
+	RedirectUrl string = "http://e6156-hw1-frontend.s3-website.us-east-2.amazonaws.com/google-login/callback"
 	ScopeEmail string = "https://www.googleapis.com/auth/userinfo.email"
 	ScopeUserProfile string = "https://www.googleapis.com/auth/userinfo.profile"
 )
